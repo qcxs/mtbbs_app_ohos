@@ -1,5 +1,10 @@
 # MT 论坛 — Flutter 客户端
 
+> **鸿蒙独立版**：本仓库基于 [qcxs/mtbbs_app](https://github.com/qcxs/mtbbs_app) 的 `lib/`，
+> 只面向 HarmonyOS（Flutter-OH），不保证 Android / Windows 构建。
+> 快速开始见 [docs/ohos/02-从零部署指南.md](docs/ohos/02-从零部署指南.md)；
+> 与上游同步见 [docs/ohos/03-同步上游.md](docs/ohos/03-同步上游.md)。
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 基于 Flutter 的 Discuz 论坛客户端，适配 **MT 论坛**（[bbs.binmt.cc](https://bbs.binmt.cc)）克米模板。
@@ -204,6 +209,7 @@ docs/
 ├── 20-人机验证与站点防护.md 阿里云 ESA 挑战：机制、两级恢复、自解约束、交互式预案
 ├── 21-留言板.md             用户留言板（do=wall）：写操作协议、受限渲染、权限、页面
 ├── 22-生成图片.md           分享图：两条实现路子、复用的公共件、接入步骤、坑索引
+├── 23-可选能力与平台降级.md 可选插件/能力注册表、适配器边界、ACW 双路径、鸿蒙仓库边界
 ├── lessons/                经验教训正文（按主题分册；docs/07 是编号索引）
 │   ├── 解析与渲染.md          解析与渲染（含三层测试诊断法）
 │   ├── 编辑器.md              编辑器

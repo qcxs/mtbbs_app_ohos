@@ -49,3 +49,9 @@ app.*.map.json
 /mtbbs_release.json
 /android/app/key.jks
 /android/key.properties
+
+# 鸿蒙仓库的依赖覆盖是项目的一部分，必须提交（防止上游 .gitignore 误伤）
+!pubspec_overrides.yaml
+
+# FVM Version Cache
+.fvm/

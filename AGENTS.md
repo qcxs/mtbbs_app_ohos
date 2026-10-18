@@ -34,6 +34,17 @@ Discuz（MT 论坛克米模板）的 Flutter 客户端。Discuz 无官方 API：
 7. **验证闭环**：改完跑 `flutter analyze lib`；涉及真实请求用探针 `tool/api_probe_test.dart`（见 docs/10）
 8. **文档与代码同步**：新增/修改能力时更新对应 `docs/`；新增文档要挂进下方路由表 + `README.md`（见 `docs/00-文档编写规范.md`）
 
+## 鸿蒙仓库专属
+
+> 本仓库是 mtbbs 的鸿蒙独立版，只面向 Flutter-OH 构建。
+
+- 构建 / 环境：`docs/ohos/01-环境与构建.md`、`docs/ohos/02-从零部署指南.md`
+- 同步上游：`docs/ohos/03-同步上游.md`
+- AI 同步提示词：`docs/ohos/04-AI同步提示词.md`
+- `pubspec_overrides.yaml` **常驻**；不要用官方 Flutter 在本仓库构建 Android/Windows
+- `lib/` 与上游保持一致；跨平台能力开关见 `docs/23-可选能力与平台降级.md`
+- 确需鸿蒙专属代码时只新增 `lib/platform/ohos/`，不要改共享业务文件
+
 ## 任务 → 文档路由表
 
 > 按「角色」分组。**编号是稳定 ID**：新篇只 append（23、24…），不重排、不改旧号。
@@ -45,6 +56,9 @@ Discuz（MT 论坛克米模板）的 Flutter 客户端。Discuz 无官方 API：
 | 架构 / 分层 / 渲染管线 / 图片缓存 / Referer | 01 |
 | 开发规范（API 流程 / 文件 / UI 约定 / 数据↔渲染边界） | 02 |
 | 状态管理 / 站点切换 / 持久化 | 04 |
+| 可选能力 / 平台降级（鸿蒙等） | 23 + 02 |
+| 鸿蒙构建 / 依赖覆盖 / 同步上游 | docs/ohos/01 + 02 + 03 |
+| AI 执行上游同步 | docs/ohos/04 |
 | 主题 / 夜间模式 / 配色 | 08 |
 | 依赖行为确认 / 升级 | 09 |
 
