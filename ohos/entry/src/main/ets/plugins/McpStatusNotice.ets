@@ -120,6 +120,9 @@ export class McpStatusNotice {
       },
       wantAgent: agent,
       isOngoing: true,
+      // 默认 true：点了带 wantAgent 的通知就自动清除。常驻状态通知必须保留，
+      // 否则点一次通知就再也没有「MCP 服务已开启」了。
+      tapDismissed: false,
     };
     await notificationManager.publish(request);
   }

@@ -124,6 +124,8 @@ lib/mcp/
 - **Windows**：窗口标题标注 `MTBBS（已开启 MCP）`；标题栏一律由 `widgets/layout/window_title_bar.dart` 自绘（含 MCP 徽章与三个窗口按钮）。不用原生标题栏的原因见 docs/07 #61：其配色由 DWM/系统主题决定，App 无法保证可读。
 - **鸿蒙**：`notificationManager` 常驻通知（`SERVICE_INFORMATION` 槽位 + `isOngoing`），原生实现在鸿蒙仓库 `ohos/entry/src/main/ets/plugins/McpStatusNotice.ets`（Dart 侧只维护通道契约，见该文件注释）。通知的 Want 携带 `mcp_tap` 参数回到 `EntryAbility`，再由原生调通道 `onNotificationTap` 弹快捷开关；冷启动时原生先暂存，Dart 首帧后 `getPendingTap` 补取。首次发布时原生调 `requestEnableNotification` 申请通知权限，被拒则静默跳过。平台判定在 Dart 侧用 `Platform.operatingSystem == 'ohos'` 字符串（官方 Flutter 没有 `TargetPlatform.ohos`）。
 
+  **必须显式 `tapDismissed: false`**：`NotificationRequest` 的 `tapDismissed` 默认为 `true`，带 `wantAgent` 的通知被点击后系统会自动清除。常驻状态通知必须保留，否则点一次快捷开关就再也没有「MCP 服务已开启」；`isOngoing` 只表示通知类型，不负责点击后的去留。
+
 ### 快捷开关入口（弹窗 + 一键开关）
 
 `showMcpQuickDialog()` —— 状态一瞥（状态点 / 端点 / 工具数 / 无令牌告警）+ **一个**开关控件（开关行），右上角可直达 `/settings/mcp`。开/关**只有开关这一处**，不再另设同语义的主按钮，避免"两套入口"。
