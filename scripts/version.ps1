@@ -8,10 +8,10 @@
 #     其他平台仅当显式传入 -VersionName（CI 发布路径）时追加，
 #     保证 Release 产物文件名带版本，便于用户反馈定位
 #   - beta 形态（-Beta）：版本固定 1.0.0-beta / 1，不追加 hash，配合
-#     `--dart-define=BETA=true` 由 gradle 切成独立应用（见 docs/15）
+#     `--dart-define=BETA=true` 由构建侧切成独立应用（见 docs/ohos/01-环境与构建.md）
 #   - 生成 mtbbs_release.json，供 `flutter build --dart-define-from-file` 注入
 #   - 导出 MTBBS_VERSION_NAME / MTBBS_VERSION_CODE / MTBBS_VERSION / MTBBS_BETA
-#     环境变量，CI 下同时写入 GITHUB_ENV 供后续步骤使用（Inno Setup 安装包版本号也读它）
+#     环境变量，CI 下同时写入 GITHUB_ENV 供后续步骤使用
 #
 # 用法：
 #   scripts/version.ps1                               # 桌面平台，版本名读 pubspec.yaml

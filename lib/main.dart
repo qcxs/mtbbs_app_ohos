@@ -18,7 +18,7 @@ import 'package:mtbbs/core/app/app_capabilities.dart';
 import 'package:mtbbs/core/app/app_shortcuts.dart';
 import 'package:mtbbs/core/app/site_store.dart';
 import 'package:mtbbs/core/app/site_cdn.dart';
-import 'package:mtbbs/core/app/acw_solver.dart';
+import 'package:mtbbs/core/app/js_challenge_solver.dart';
 import 'package:mtbbs/core/app/verification_gate.dart';
 import 'package:mtbbs/core/app/emoji_loader.dart';
 import 'package:mtbbs/core/app/avatar_redirect_store.dart';
@@ -115,7 +115,7 @@ void main() async {
 
   // 设置项「人机验证改用网页完成」：打开后跳过 L1 本地自解，强制走 WebView，
   // 用于排查验证页本身的问题（L1 上线后 L2 平时不会被触发）。
-  AcwSolver.instance.skipLocalSolve = () => settings.acwForceWebview;
+  JsChallengeSolver.instance.skipLocalSolve = () => settings.acwForceWebview;
 
   // 订阅站点切换事件 — ApiService 已就绪，可安全调用 switchSite
   EventBus.stream.where((e) => e is SiteChangedEvent).listen((_) async {
@@ -224,7 +224,7 @@ void main() async {
   // 应用内更新检查：仅正式版 + 开关开启时，延迟几秒后台检查（不阻塞首帧）
   scheduleAutoUpdateCheck(settings);
 
-  // Android：点常驻通知 → 弹 MCP 快捷开关（与 Windows 标题栏徽章、
+  // Android / 鸿蒙：点常驻通知 → 弹 MCP 快捷开关（与 Windows 标题栏徽章、
   // 「我的」页开关共用同一实现）。放在 runApp 之后：需要在交出事件循环前
   // 挂上首帧回调，才能补取冷启动那次点击（见 McpStatusNotice.init）。
   unawaited(McpStatusNotice.init(onNotificationTap: showMcpQuickDialog));

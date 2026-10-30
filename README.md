@@ -1,7 +1,8 @@
 # MT 论坛 — Flutter 客户端
 
 > **鸿蒙独立版**：本仓库基于 [qcxs/mtbbs_app](https://github.com/qcxs/mtbbs_app) 的 `lib/`，
-> 只面向 HarmonyOS（Flutter-OH），不保证 Android / Windows 构建。
+> 只面向 HarmonyOS（Flutter-OH）；仓库内不含 Android / Windows 等其它平台工程。
+> 鸿蒙专属的 Dart 逻辑写在 `lib/ohos/`（上游永不存在该目录，合并零冲突）。
 > 快速开始见 [docs/ohos/02-从零部署指南.md](docs/ohos/02-从零部署指南.md)；
 > 与上游同步见 [docs/ohos/03-同步上游.md](docs/ohos/03-同步上游.md)。
 
@@ -24,7 +25,7 @@
 | **导读** | 最新/热门/精华/新帖列表 |
 | **版块** | 版块分类浏览 + 帖子列表 |
 | **帖子详情** | BBCode 渲染、评论、点赞、收藏、评分 |
-| **生成图片** | 一键生成分享图：楼层/评论 = 可选评分/截断/二维码的浅色卡片；个人主页 = **整页内容原样** + 站点/用户/二维码水印（Android 存相册 / Windows 另存为） |
+| **生成图片** | 一键生成分享图：楼层/评论 = 可选评分/截断/二维码的浅色卡片；个人主页 = **整页内容原样** + 站点/用户/二维码水印（存相册，不可用时回退另存为） |
 | **编辑器** | 发帖/评论/回复/编辑，BBCode 工具栏，图片管理，MT 图床，粘贴图片上传，快照自动保存 |
 | **社区** | 版块帖子列表（路由 `/forum`，带 fid 时显示对应版块帖子） |
 | **圈子** | Discuz 群组只读浏览（列表/分类/内容讨论区，入口在「我的」页） |
@@ -40,75 +41,35 @@
 
 | 工具 | 版本 |
 |------|------|
-| Flutter | 3.44.2+ |
-| Dart | 3.12.2+ |
-| Android SDK | compileSdk 跟随 Flutter 默认（当前 36） |
-| Windows | Windows 10+ (x64)，Visual Studio 2022（见下方打包前置） |
+| Flutter-OH SDK | `oh-3.44.9-dev`（Dart 3.12.2，见 `docs/ohos/01-环境与构建.md`） |
+| DevEco Studio | 26.0 + HarmonyOS SDK API 26 |
+| 产物 | `build/ohos/hap/entry-default-{signed,unsigned}.hap` |
 
 ```bash
 # 检查代码
 flutter analyze lib/
 
-# 运行（Windows x64）
-flutter run -d windows
-
-# 运行（Android）
-flutter run -d <device_id>
-
 # 测试 API（真实请求探针，docs/10-API探针使用规范.md）
 flutter test tool/api_probe_test.dart --dart-define=cmd=help
 ```
 
-## 本地打包
+## 本地打包（HAP）
 
-> 版本号统一由 `scripts/version.ps1` 从 pubspec.yaml（版本名）+ git 提交数（构建号）自动生成，详见 `docs/15-版本发布.md`。不要手动改安装包/关于页里的版本号。
-
-### Windows x64（安装包）
-
-#### 前置条件
-
-- Visual Studio **2022**（17.13+，含**使用 C++ 的桌面开发**工作负载；工具链对齐说明见 `docs/15-版本发布.md`，勿用 VS2026）
-- [Inno Setup](https://jrsoftware.org/isinfo.php) 6+（Unicode 版），安装后确保 `iscc` 在 PATH 中
-
-#### 步骤
+环境搭建、依赖适配、签名与已知坑见 [docs/ohos/01-环境与构建.md](docs/ohos/01-环境与构建.md)。
 
 ```powershell
-# 1. 生成版本信息（版本名取自 pubspec.yaml）
-powershell -ExecutionPolicy Bypass -File scripts\version.ps1
+# 依赖解析（pubspec.yaml 的 dependency_overrides 段常驻生效）
+& $flutter pub get
 
-# 2. 编译 release 版
-flutter build windows --release `
-  --dart-define-from-file=mtbbs_release.json `
-  --build-name=$env:MTBBS_VERSION_NAME `
-  --build-number=$env:MTBBS_VERSION_CODE
+# 出包：模拟器用 x64，真机用 arm64；侧载分发加 --no-codesign
+# --target 指向鸿蒙专属入口（含应用流转桥接），不带也能出包但接续不生效
+& $flutter build hap --debug   --target lib/ohos/entry.dart --target-platform ohos-x64
+& $flutter build hap --release --target lib/ohos/entry.dart --target-platform ohos-arm64 --no-codesign
 
-# 3. 生成安装包（版本号自动取环境变量）
-iscc installer\setup.iss
+# 调试运行（可选）
+& $flutter devices
+& $flutter run --target lib/ohos/entry.dart -d <device-id>
 ```
-
-**安装包路径**：`build\MTBBS_v{版本}_Setup.exe`
-
-**注意**：编译前确保没有 mtbbs.exe 进程在运行，否则 MSBuild 因文件锁定会报错。
-
-```powershell
-# 如遇文件锁定，先结束进程
-Get-Process mtbbs -ErrorAction SilentlyContinue | Stop-Process -Force
-```
-
-### Android（APK）
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\version.ps1 android
-flutter build apk --release `
-  --dart-define-from-file=mtbbs_release.json `
-  --build-name=$env:MTBBS_VERSION_NAME `
-  --build-number=$env:MTBBS_VERSION_CODE `
-  --target-platform android-arm64
-```
-
-输出在 `build\app\outputs\flutter-apk\app-release.apk`。
-
-> 因 App 未上架商店，APK 需手动安装。多 ABI 全量打包去掉 `--target-platform` 参数即可。本地无 `android/key.properties` 时用 debug 签名（自测用），正式分发请配置签名（见 `docs/15-版本发布.md`）。
 
 ---
 
@@ -154,30 +115,9 @@ SiteConfig.sites[0] = SiteInfo(
 
 > 本项目针对 MT 论坛的克米模板适配。不同 Discuz 模板/版本的页面结构可能有差异，若解析异常，参考 `docs/03-UA与解析策略.md` 调整。
 
-### 4. 修改 Android 应用标识（推荐）
+### 4. 修改鸿蒙应用标识（推荐）
 
-`android/app/build.gradle.kts` 中 `applicationId = "com.github.qcxs.discuz"` 是原作者的应用 ID——**Fork 后务必改成你自己的**（如 `com.yourname.discuz`），否则与原版应用包名冲突：同一设备无法同时安装，也无法覆盖升级。debug / beta 变体分别带 `.debug` / `.beta` 后缀，可与正式版共存。
-
-### 5. 使用 GitHub Actions 发布
-
-Fork 后 Actions 默认可用，`release.yml` 为**手动触发**（`workflow_dispatch`，不会自动跑）：
-
-1. 进入仓库 **Actions** 页 → 左侧选 **Release** → **Run workflow**
-2. 勾选平台（Android / Windows），填 `tag` 参数：
-   - **留空**：只构建不发布，产物在运行页底部作为 artifact 下载（推荐用于测试流程）
-   - **填 `v1.0.0`**：构建后自动创建/更新 GitHub Release 并上传产物（应用版本名 = `1.0.0` + 9 位提交 hash）；若 tag 不存在则由发布动作自动创建（指向当前迁出的提交）
-3. 版本号规则与完整发布流程见 `docs/15-版本发布.md`
-
-**Android 签名（可选但正式分发必配）**：CI 默认降级为 debug 签名（仅自测可装）。正式发布需在仓库 **Settings → Secrets and variables → Actions** 配置以下 4 个变量，`release.yml` 会自动检测并正式签名；缺任一变量会静默降级，**不会报错**：
-
-| Secret 名 | 说明 |
-|-----------|------|
-| `SIGN_KEYSTORE_BASE64` | `keytool` 生成的 keystore 文件 base64 编码 |
-| `KEYSTORE_PASSWORD` | keystore 密码 |
-| `KEY_ALIAS` | 密钥别名 |
-| `KEY_PASSWORD` | 密钥密码 |
-
-Windows 端无需额外配置：CI 使用 `windows-2022` 镜像（与本地 VS2022 工具链对齐），Inno Setup 中文语言文件已随仓库内置。
+`ohos/AppScope/app.json5` 中的 `bundleName` 是原作者的包名——**Fork 后务必改成你自己的**（如 `com.yourname.discuz`），否则与原版应用冲突：同一设备无法同时安装，也无法覆盖升级。
 
 ## 文档
 
@@ -201,7 +141,6 @@ docs/
 ├── 12-写操作API文档.md     发帖/评论/回复/修改
 ├── 13-修改API文档.md       帖子/评论修改
 ├── 14-新增删除收藏功能文档.md  写功能实战参考
-├── 15-版本发布.md          版本号规则 / 本地打包 / GitHub 自动发布
 ├── 16-应用图标.md          图标设计规范与各尺寸重出流程
 ├── 17-MCP服务端.md         MCP 只读服务端：分层、安全模型、能力清单、关键决策
 ├── 18-站内搜索.md           search.php 原生搜索：请求流程、两套模板解析、翻页、探针
@@ -210,6 +149,12 @@ docs/
 ├── 21-留言板.md             用户留言板（do=wall）：写操作协议、受限渲染、权限、页面
 ├── 22-生成图片.md           分享图：两条实现路子、复用的公共件、接入步骤、坑索引
 ├── 23-可选能力与平台降级.md 可选插件/能力注册表、适配器边界、ACW 双路径、鸿蒙仓库边界
+├── ohos/                   鸿蒙构建与同步上游
+│   ├── 01-环境与构建.md       环境 / 依赖适配 / 签名 / 已知坑
+│   ├── 02-从零部署指南.md     从零搭建鸿蒙构建环境
+│   ├── 03-同步上游.md         与主线 mtbbs 合并更新
+│   ├── 04-AI同步提示词.md     AI 执行同步的提示词
+│   └── 05-应用流转可行性调研.md 应用接续（Continuity）可行性、代码落点
 ├── lessons/                经验教训正文（按主题分册；docs/07 是编号索引）
 │   ├── 解析与渲染.md          解析与渲染（含三层测试诊断法）
 │   ├── 编辑器.md              编辑器
@@ -266,6 +211,6 @@ lib/
 
 ## 致谢
 
-- [**PiliPlus**](https://github.com/bggRGjQaUbCoE/PiliPlus)：开源的 B 站客户端标杆，本项目的版本管理、GitHub Actions 发布与打包流程参考了其成熟实践
+- [**PiliPlus**](https://github.com/bggRGjQaUbCoE/PiliPlus)：开源的 B 站客户端标杆，本项目的版本管理与打包流程参考了其成熟实践
 - **DeepSeek API**：量大管饱的推理能力，支撑了本项目大量的开发、调试与文档工作
 - **Trae**：可视化编辑器，降低了 Flutter 开发的上手门槛，适合小白快速构建应用

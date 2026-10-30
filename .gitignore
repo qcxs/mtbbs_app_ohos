@@ -25,7 +25,6 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
@@ -40,18 +39,10 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# 发布相关（scripts/version.ps1 生成的构建元数据与签名文件）
+# 发布相关（scripts/version.ps1 生成的构建元数据）
 /mtbbs_release.json
-/android/app/key.jks
-/android/key.properties
 
-# 鸿蒙仓库的依赖覆盖是项目的一部分，必须提交（防止上游 .gitignore 误伤）
-!pubspec_overrides.yaml
+# 鸿蒙专属的依赖覆盖写在 pubspec.yaml 的 dependency_overrides 段（不再使用 pubspec_overrides.yaml）
 
 # FVM Version Cache
 .fvm/
