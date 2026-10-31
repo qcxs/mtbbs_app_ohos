@@ -1,6 +1,9 @@
 {
   "app": {
-    "bundleName": "com.github.qcxs.mtbbs",
+    // 包名带 .ohos 后缀：鸿蒙设备上可能通过「卓易通」安装上游 Android APK，
+    // 两者包名必须不同，否则只能二选一。beta / debug 变体分别再加 .beta / .debug
+    // 后缀（见 build-profile.json5 的 products）。
+    "bundleName": "com.github.qcxs.mtbbs.ohos",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

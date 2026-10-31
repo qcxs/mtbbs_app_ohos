@@ -7,7 +7,27 @@
     "signingConfigs": [],
     "products": [
       {
+        // 正式版：com.github.qcxs.mtbbs.ohos
         "name": "default",
+        "bundleName": "com.github.qcxs.mtbbs.ohos",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "targetSdkVersion": "26.0.0",
+        "runtimeOS": "HarmonyOS",
+      },
+      {
+        // 预发布测试包：com.github.qcxs.mtbbs.ohos.beta（与正式版独立安装）
+        "name": "beta",
+        "bundleName": "com.github.qcxs.mtbbs.ohos.beta",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "targetSdkVersion": "26.0.0",
+        "runtimeOS": "HarmonyOS",
+      },
+      {
+        // 调试包：com.github.qcxs.mtbbs.ohos.debug（与正式版独立安装）
+        "name": "debug",
+        "bundleName": "com.github.qcxs.mtbbs.ohos.debug",
         "signingConfig": "default",
         "compatibleSdkVersion": "5.0.5(17)",
         "targetSdkVersion": "26.0.0",
@@ -35,6 +55,18 @@
           "name": "default",
           "applyToProducts": [
             "default"
+          ]
+        },
+        {
+          "name": "beta",
+          "applyToProducts": [
+            "beta"
+          ]
+        },
+        {
+          "name": "debug",
+          "applyToProducts": [
+            "debug"
           ]
         }
       ]

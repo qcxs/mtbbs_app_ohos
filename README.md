@@ -25,7 +25,7 @@
 | **导读** | 最新/热门/精华/新帖列表 |
 | **版块** | 版块分类浏览 + 帖子列表 |
 | **帖子详情** | BBCode 渲染、评论、点赞、收藏、评分 |
-| **帖子缓存** | 自动缓存新帖（只存已加载评论页，保留最近 3 个正文版本，默认 1 天）；离线副本永不过期；独立管理页支持按帖删除、导入/导出明文 JSON；损坏时禁用并引导备份/重建 |
+| **帖子缓存** | 自动缓存新帖（只存已加载评论页，默认保留最近 3 个正文版本、单帖 128 KB，均可在管理页调整；默认 1 天过期）；离线副本永不过期；独立管理页支持按帖删除、导入/导出明文 JSON；损坏时禁用并引导备份/重建 |
 | **生成图片** | 一键生成分享图：楼层/评论 = 可选评分/截断/二维码的浅色卡片；个人主页 = **整页内容原样** + 站点/用户/二维码水印（存相册，不可用时回退另存为） |
 | **编辑器** | 发帖/评论/回复/编辑，BBCode 工具栏，图片管理，MT 图床，粘贴图片上传，快照自动保存 |
 | **社区** | 版块帖子列表（路由 `/forum`，带 fid 时显示对应版块帖子） |
@@ -64,7 +64,8 @@ flutter test tool/api_probe_test.dart --dart-define=cmd=help
 
 # 出包：模拟器用 x64，真机用 arm64；侧载分发加 --no-codesign
 # 接续（应用流转）由 Dart 插件 packages/mtbbs_ohos_bridge 自动注册，不需要 --target
-& $flutter build hap --debug   --target-platform ohos-x64
+# 包名变体：正式 …mtbbs.ohos / beta …mtbbs.ohos.beta（--flavor beta）/ debug …mtbbs.ohos.debug（--flavor debug）
+& $flutter build hap --debug   --target-platform ohos-x64 --no-codesign --flavor debug
 & $flutter build hap --release --target-platform ohos-arm64 --no-codesign
 
 # 调试运行（可选）

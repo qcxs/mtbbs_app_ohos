@@ -9,6 +9,17 @@
       "runtimeOS": "HarmonyOS"
     },
     {
+      // 预发布 / 调试变体：与 product 一一对应，hvigor 的输出目录按 target 名生成
+      // （entry/build/<buildMode>/outputs/<target>/entry-<target>-*.hap），
+      // flutter build hap --flavor <product> 依赖这个对应关系
+      "name": "beta",
+      "runtimeOS": "HarmonyOS"
+    },
+    {
+      "name": "debug",
+      "runtimeOS": "HarmonyOS"
+    },
+    {
       "name": "ohosTest",
     }
   ]

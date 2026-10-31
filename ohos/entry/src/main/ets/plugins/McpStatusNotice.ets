@@ -10,8 +10,13 @@ const CHANNEL = 'mtbbs/mcp_status';
 const NOTIFICATION_ID = 8765;
 const TAP_PARAM = 'mcp_tap';
 
-/** Want 目标：本应用主 Ability（bundleName 见 AppScope/app.json5） */
-const BUNDLE_NAME = 'com.github.qcxs.mtbbs';
+/**
+ * Want 目标：本应用主 Ability。
+ *
+ * bundleName 不在编译期写死 —— 正式 / beta / debug 三个变体的包名不同
+ * （见 ohos/build-profile.json5 的 products），运行时从 ApplicationInfo 取，
+ * 保证任一变体装的包都能被通知正确拉起。
+ */
 const ABILITY_NAME = 'EntryAbility';
 
 /**
@@ -107,7 +112,9 @@ export class McpStatusNotice {
       // 用户拒绝后此调用会抛错（系统不再重复弹窗），由外层 catch 静默处理
       await notificationManager.requestEnableNotification(context);
     }
-    const agent = await wantAgent.getWantAgent(McpStatusNotice.wantAgentInfo());
+    const agent = await wantAgent.getWantAgent(
+      McpStatusNotice.wantAgentInfo(context.applicationInfo.name),
+    );
     const request: notificationManager.NotificationRequest = {
       id: NOTIFICATION_ID,
       notificationSlotType: notificationManager.SlotType.SERVICE_INFORMATION,
@@ -127,10 +134,10 @@ export class McpStatusNotice {
     await notificationManager.publish(request);
   }
 
-  private static wantAgentInfo(): wantAgent.WantAgentInfo {
+  private static wantAgentInfo(bundleName: string): wantAgent.WantAgentInfo {
     return {
       wants: [{
-        bundleName: BUNDLE_NAME,
+        bundleName: bundleName,
         abilityName: ABILITY_NAME,
         parameters: { 'mcp_tap': true },
       }],

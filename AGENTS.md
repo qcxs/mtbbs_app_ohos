@@ -39,6 +39,11 @@ Discuz（MT 论坛克米模板）的 Flutter 客户端。Discuz 无官方 API：
 > 本仓库是 mtbbs 的鸿蒙独立版，只面向 Flutter-OH 构建。
 
 - 构建 / 环境：`docs/ohos/01-环境与构建.md`、`docs/ohos/02-从零部署指南.md`
+- 版本与更新源注入：发布包先跑 `& .\scripts\version.ps1 ohos -Repo qcxs/mtbbs_app_ohos -Channel release`，
+  打包时带 `--dart-define-from-file=mtbbs_release.json`（不传 `-Repo` 的本地包不检查更新，见 `docs/ohos/01` §3.3）
+- 包名变体（避免与卓易通里的上游 APK 冲突）：正式 `com.github.qcxs.mtbbs.ohos`、
+  beta `…ohos.beta`、debug `…ohos.debug`；构建时分别用默认 / `--flavor beta` / `--flavor debug`，
+  定义在 `ohos/build-profile.json5` 的 `products` 与 `ohos/entry/build-profile.json5` 的 `targets`（见 `docs/ohos/01` §3.4）
 - 同步上游（AI 合并手册）：`docs/ohos/03-同步上游.md`
 - AI 同步提示词：`docs/ohos/04-AI同步提示词.md`
 - 应用流转（应用接续）方案与实施记录：`docs/ohos/05-应用流转可行性调研.md`

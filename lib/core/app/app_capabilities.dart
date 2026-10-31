@@ -21,13 +21,15 @@ enum AppCapability {
   /// 本地 JS 引擎：执行站点挑战脚本（ACW 自解的第一条路径）。
   localJsSolver,
 
+  /// 打开外部链接（浏览器 / 应用市场）：更新下载与 Release 页。
+  openExternalUrl,
+
   /// MCP 只读服务端。
   mcpServer,
 }
 
 /// 模块级能力注册表。
 ///
-/// 与 `app_page_gate.dart`、`api_service._simulateBrowserHeaders` 同一套做法：
 /// 启动早期就要生效，调用点不一定有 context，因此不放进 Provider。
 ///
 /// 判定分两层：
@@ -92,6 +94,9 @@ abstract final class AppCapabilities {
       case AppCapability.localJsSolver:
         // flutter_qjs_next 没有鸿蒙实现；鸿蒙走纯 Dart ACW 算法兜底。
         return !isOhos;
+      case AppCapability.openExternalUrl:
+        // 鸿蒙由社区版 url_launcher 提供；缺失时运行时 disable 并降级为复制链接。
+        return true;
       case AppCapability.mcpServer:
         // mcp_dart 是纯 Dart，鸿蒙可运行；启动失败时由控制器 disable。
         return true;
