@@ -52,6 +52,13 @@ dependencies:
   # 路由
   go_router: ^14.0.0
 
+  # 鸿蒙应用接续（应用流转）的 Dart 插件：声明 dartPluginClass 后由 flutter_tools
+  # 自动写进 dart_plugin_registrant，引擎在 isolate 启动时注册 —— 构建/运行不再
+  # 需要 --target lib/ohos/entry.dart（见 docs/ohos/05 §5.1）。
+  # 包内自包含（不反向依赖 app），避免 pub 循环依赖。
+  mtbbs_ohos_bridge:
+    path: packages/mtbbs_ohos_bridge
+
   # 状态管理
   provider: ^6.1.0
 

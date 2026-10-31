@@ -4,7 +4,7 @@ import { Any, FlutterEngine, Log, MethodCall, MethodChannel, MethodResult } from
 
 const TAG = 'MTBBS_CONTINUATION';
 
-/** 通道名与方法名必须与 Dart 侧 lib/ohos/continuation_bridge.dart 一致 */
+/** 通道名与方法名必须与 Dart 侧 packages/mtbbs_ohos_bridge/lib/src/bridge.dart 一致 */
 const CHANNEL = 'mtbbs/continuation';
 
 /** 接续数据在 want.parameters 中的键，须避开系统预置 key（version/targetDevice 等） */

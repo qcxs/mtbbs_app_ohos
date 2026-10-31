@@ -42,15 +42,17 @@ Discuz（MT 论坛克米模板）的 Flutter 客户端。Discuz 无官方 API：
 - 同步上游（AI 合并手册）：`docs/ohos/03-同步上游.md`
 - AI 同步提示词：`docs/ohos/04-AI同步提示词.md`
 - 应用流转（应用接续）方案与实施记录：`docs/ohos/05-应用流转可行性调研.md`
-  （实现落在 `lib/ohos/entry.dart` + `continuation_bridge.dart` / `continuation.dart`，
-  构建需带 `--target lib/ohos/entry.dart`）
+  （Dart 实现在下游 Dart 插件 `packages/mtbbs_ohos_bridge/`，由引擎自动注册，构建**不需要**
+  `--target`；`lib/ohos/entry.dart` 只是可选兜底入口）
 - 依赖覆盖常驻在 `pubspec.yaml` 的 `dependency_overrides` 段（不再使用 `pubspec_overrides.yaml`）；
   本仓库不含 Android / Windows 平台工程，也不要用官方 Flutter 构建它们
 - **`lib/ohos/**` 是下游专属目录**：鸿蒙特有的 Dart 逻辑（通道桥、自定义入口、鸿蒙专属页面）
   全部写这里。上游永不存在该目录 → 合并零冲突，上游 `lib/` 大重构也不影响它
+- **`packages/**` 是下游专属目录**：需要「随 App 自动注册的 Dart 插件」（`dartPluginClass`）时放这里；
+  插件包必须自包含，**不能反向依赖 app**（会形成 pub 循环依赖）
 - `lib/` 其余文件一律取上游，不在上游文件里散写鸿蒙逻辑（合并前
   `git diff <upstream>/main -- lib ':!lib/ohos'` 必须为空）
-- 鸿蒙特有能力优先只写 `ohos/`；确需 Dart 时写 `lib/ohos/`。
+- 鸿蒙特有能力优先只写 `ohos/`；确需 Dart 时写 `lib/ohos/`，需要自动注册的 Dart 插件写 `packages/`。
 
 ## 任务 → 文档路由表
 
@@ -67,7 +69,7 @@ Discuz（MT 论坛克米模板）的 Flutter 客户端。Discuz 无官方 API：
 | 可选能力 / 平台降级（鸿蒙等） | 23 + 02 |
 | 鸿蒙构建 / 依赖覆盖 / 同步上游 | docs/ohos/01 + 02 + 03 |
 | AI 执行上游同步 | docs/ohos/04 |
-| 鸿蒙特有能力（Dart 写 `lib/ohos/`、原生写 `ohos/`） | docs/ohos/03（§1 归属矩阵）+ 04 |
+| 鸿蒙特有能力（Dart 写 `lib/ohos/`、Dart 插件写 `packages/`、原生写 `ohos/`） | docs/ohos/03（§1 归属矩阵）+ 04 |
 | 应用流转 / 应用接续 | docs/ohos/05 |
 | 主题 / 夜间模式 / 配色 | 08 |
 | 通用组件 / 弹层 / 列表分页 / 状态视图复用 | 26 + 02 |

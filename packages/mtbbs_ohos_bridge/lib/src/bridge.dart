@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:mtbbs/core/utils/logger.dart';
-import 'package:mtbbs/ohos/continuation.dart';
+import 'package:flutter/widgets.dart';
+
+import 'continuation.dart';
+import 'log.dart';
 
 /// 应用接续通道契约（通道名 `mtbbs/continuation`）。
 ///
@@ -16,16 +18,45 @@ import 'package:mtbbs/ohos/continuation.dart';
 /// | Dart→ArkTS | `getPendingContinuation`（取走暂存数据） |
 /// | Dart→ArkTS | `setContinuationActive`（切换可接续态） |
 abstract class ContinuationBridge {
-  static const String _tag = 'Continuation';
-
   static const MethodChannel _channel = MethodChannel('mtbbs/continuation');
+
+  /// 注册 handler 的等待上限。dart_plugin_registrant 在 isolate 启动时执行，
+  /// 正常情况下 `main()` 很快初始化 binding；10 s 仍无 binding 说明该 isolate
+  /// 根本不是 Flutter app（直接放弃，不留常驻定时器）。
+  static const Duration _bindingWaitLimit = Duration(seconds: 10);
+  static const Duration _bindingPollInterval = Duration(milliseconds: 20);
 
   static bool _installed = false;
 
-  /// 自定义入口 `lib/ohos/entry.dart` 在 `app.main()` 之前调用一次。
+  /// Dart 插件入口方法：等 `WidgetsBinding` 就绪后再 [install]。
   ///
-  /// 注册 handler 必须先于 `runApp`：`onContinue` 可能在引擎启动后的任意时刻
-  /// 到达，handler 缺失会直接判为 `notImplemented` → 接续失败。
+  /// 由 [MtbbsOhosBridge.registerWith] 调用（早于 `main()`），此时不能直接
+  /// `setMethodCallHandler`（依赖 binding 的 binaryMessenger）。
+  static void installWhenBindingReady() {
+    if (_installed) return;
+    var waited = Duration.zero;
+    Timer.periodic(_bindingPollInterval, (timer) {
+      if (_installed) {
+        timer.cancel();
+        return;
+      }
+      if (!_bindingReady) {
+        waited += _bindingPollInterval;
+        if (waited >= _bindingWaitLimit) {
+          timer.cancel();
+          logBridge('WidgetsBinding 未就绪，应用接续通道未安装');
+        }
+        return;
+      }
+      timer.cancel();
+      install();
+    });
+  }
+
+  /// 幂等安装：注册 handler 并启动可接续态同步。
+  ///
+  /// 注册 handler 必须先于接续事件到达：`onContinue` 可能在引擎启动后的任意
+  /// 时刻到达，handler 缺失会直接判为 `notImplemented` → 接续失败。
   static void install() {
     if (_installed) return;
     _installed = true;
@@ -52,7 +83,7 @@ abstract class ContinuationBridge {
     try {
       return await _channel.invokeMethod<String>('getPendingContinuation');
     } on PlatformException catch (e) {
-      AppLogger.w(_tag, 'getPendingContinuation failed: $e');
+      logBridge('getPendingContinuation failed: $e');
       return null;
     } on MissingPluginException catch (_) {
       // 原生侧未实现（旧包），静默降级
@@ -65,9 +96,17 @@ abstract class ContinuationBridge {
     unawaited(
       _channel
           .invokeMethod<void>('setContinuationActive', {'active': active})
-          .catchError(
-            (Object e) => AppLogger.w(_tag, 'setContinuationActive failed: $e'),
-          ),
+          .catchError((Object e) => logBridge('setContinuationActive failed: $e')),
     );
+  }
+
+  static bool get _bindingReady {
+    try {
+      WidgetsBinding.instance;
+      return true;
+    } catch (_) {
+      // binding 未初始化时 instance 会抛 FlutterError
+      return false;
+    }
   }
 }

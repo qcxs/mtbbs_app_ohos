@@ -63,13 +63,13 @@ flutter test tool/api_probe_test.dart --dart-define=cmd=help
 & $flutter pub get
 
 # 出包：模拟器用 x64，真机用 arm64；侧载分发加 --no-codesign
-# --target 指向鸿蒙专属入口（含应用流转桥接），不带也能出包但接续不生效
-& $flutter build hap --debug   --target lib/ohos/entry.dart --target-platform ohos-x64
-& $flutter build hap --release --target lib/ohos/entry.dart --target-platform ohos-arm64 --no-codesign
+# 接续（应用流转）由 Dart 插件 packages/mtbbs_ohos_bridge 自动注册，不需要 --target
+& $flutter build hap --debug   --target-platform ohos-x64
+& $flutter build hap --release --target-platform ohos-arm64 --no-codesign
 
 # 调试运行（可选）
 & $flutter devices
-& $flutter run --target lib/ohos/entry.dart -d <device-id>
+& $flutter run -d <device-id>
 ```
 
 ---

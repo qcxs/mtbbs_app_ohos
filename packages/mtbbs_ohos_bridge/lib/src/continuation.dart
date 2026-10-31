@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mtbbs/core/utils/logger.dart';
-import 'package:mtbbs/ohos/continuation_bridge.dart';
-import 'package:mtbbs/widgets/common/toast_utils.dart' show rootNavigatorKey;
+
+import 'bridge.dart';
+import 'log.dart';
 
 /// 鸿蒙应用接续（流转）的 Dart 侧：可接续态、快照生成、对端恢复。
 ///
@@ -14,8 +14,6 @@ import 'package:mtbbs/widgets/common/toast_utils.dart' show rootNavigatorKey;
 /// 切换系统侧的 `ACTIVE / INACTIVE`；快照也是"用时按当前 location 生成"，天然
 /// 是最新值（见 docs/ohos/05 §4.4）。
 abstract class Continuation {
-  static const String _tag = 'Continuation';
-
   /// P0 可接续路由：帖子详情、版块。
   ///
   /// 快照只存路由 location，对端 `router.go(location)` 即可原样落回同一页面，
@@ -32,19 +30,23 @@ abstract class Continuation {
   static String? _lastLocation;
   static bool _active = false;
   static bool _restoring = false;
+  static bool _started = false;
 
-  /// 在 `ContinuationBridge.install()` 里调用（早于 `app.main()`）。
+  /// 由 [ContinuationBridge.install] 调用（此时 binding 已就绪）。
   static void start() {
-    // 首帧后根导航才挂载，此时才能从 rootNavigatorKey 拿到 GoRouter
-    WidgetsBinding.instance.addPostFrameCallback((_) => _attach(0));
+    if (_started) return;
+    _started = true;
+    _attach(0);
   }
 
   static void _attach(int attempt) {
     if (_bind() == null) {
-      // 首帧时路由仍未就绪：逐帧重试几次；之后还有 onContinuationRestore /
-      // getContinuationState 两条按需绑定的兜底路径。
+      // 注册可能发生在首帧渲染之前，也可能之后（等 binding 的轮询耗掉了首帧）：
+      // 先直接试一次，失败再挂下一帧回调，并用 ensureVisualUpdate 保证真的有下一帧
+      // （否则 app 空闲时永远等不到帧，可接续态会一直不生效）。
       if (attempt < 3) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _attach(attempt + 1));
+        WidgetsBinding.instance.ensureVisualUpdate();
       }
       return;
     }
@@ -55,16 +57,28 @@ abstract class Continuation {
   }
 
   /// 绑定 GoRouter；未就绪返回 null。成功后常驻监听路由变化。
+  ///
+  /// app 的 `rootNavigatorKey` 属于上游代码，本包不能依赖；从根元素向下找
+  /// 最近的 `InheritedGoRouter`（`GoRouter.maybeOf` 是非依赖查询，可在帧外调用）。
   static GoRouter? _bind() {
     final bound = _router;
     if (bound != null) return bound;
-    final context = rootNavigatorKey.currentContext;
-    if (context == null) return null;
-    final router = GoRouter.maybeOf(context);
+    final router = _findRouter(WidgetsBinding.instance.rootElement);
     if (router == null) return null;
     _router = router;
     router.routerDelegate.addListener(_syncActive);
     return router;
+  }
+
+  static GoRouter? _findRouter(Element? element) {
+    if (element == null) return null;
+    final router = GoRouter.maybeOf(element);
+    if (router != null) return router;
+    GoRouter? found;
+    element.visitChildElements((child) {
+      found ??= _findRouter(child);
+    });
+    return found;
   }
 
   static String? _currentLocation() {
@@ -80,10 +94,7 @@ abstract class Continuation {
     if (active == _active) return;
     _active = active;
     ContinuationBridge.setActive(active);
-    AppLogger.d(
-      _tag,
-      'mission continue state -> ${active ? 'ACTIVE' : 'INACTIVE'} ($location)',
-    );
+    logBridge('mission continue state -> ${active ? 'ACTIVE' : 'INACTIVE'} ($location)');
   }
 
   /// 源端快照（由原生 onContinue 拉取）。不在可接续页面时返回 null → REJECT。
@@ -105,10 +116,10 @@ abstract class Continuation {
       final decoded = jsonDecode(data);
       final location = decoded is Map ? decoded['location'] : null;
       if (location is! String || location.isEmpty) return;
-      AppLogger.i(_tag, 'restore continuation: $location');
+      logBridge('restore continuation: $location');
       router.go(location);
     } on FormatException catch (e) {
-      AppLogger.w(_tag, 'continuation decode failed: $e');
+      logBridge('continuation decode failed: $e');
     } finally {
       _restoring = false;
     }

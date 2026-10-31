@@ -535,6 +535,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.0"
+  mtbbs_ohos_bridge:
+    dependency: "direct main"
+    description:
+      path: "packages/mtbbs_ohos_bridge"
+      relative: true
+    source: path
+    version: "1.0.0"
   nested:
     dependency: transitive
     description:
