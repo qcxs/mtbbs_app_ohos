@@ -38,6 +38,19 @@
     ],
     "requestPermissions": [
       {"name" :  "ohos.permission.INTERNET"},
+      // 剪贴板读取：Flutter 引擎的 Clipboard.getData 每次都会请求该权限，
+      // 不声明时 requestPermissionsFromUser 返回「未配置」，读取一律为 null。
+      // 该权限是受限权限（system_basic + user_grant）：除在此声明外，
+      // 还需在 AGC 申请 ACL 并写进签名 profile 才会真正授权
+      // （2in1 首次申请自动授予；手机/平板见 docs/ohos/02 §11）。
+      {
+        "name": "ohos.permission.READ_PASTEBOARD",
+        "reason": "$string:pasteboard_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        }
+      }
     ]
   }
 }

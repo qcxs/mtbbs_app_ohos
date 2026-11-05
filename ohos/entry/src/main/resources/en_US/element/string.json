@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "MT论坛"
+    },
+    {
+      "name": "pasteboard_reason",
+      "value": "Used to paste your copied text into the editor or import account settings from the clipboard"
     }
   ]
 }

@@ -36,6 +36,19 @@ export default class EntryAbility extends FlutterAbility {
     ContinuationBridge.handleWant(want, launchParams, true)
   }
 
+  onForeground(): void {
+    // 必须先走父类：FlutterAbility 在这里向 Dart 派发生命周期事件
+    super.onForeground()
+    McpStatusNotice.onForeground()
+  }
+
+  onBackground(): void {
+    // 鸿蒙没有能承载本机 HTTP 服务的长时任务类型，后台服务不可达；
+    // 撤销通知，避免继续显示「MCP 服务已开启」（见 McpStatusNotice.onBackground）
+    McpStatusNotice.onBackground()
+    super.onBackground()
+  }
+
   /**
    * 接续冷启动的窗口恢复回调。FlutterAbility 未实现此回调（不使用 ArkUI
    * 页面栈），按正常创建流程初始化 Flutter 视图并加载页面，否则对端白屏。

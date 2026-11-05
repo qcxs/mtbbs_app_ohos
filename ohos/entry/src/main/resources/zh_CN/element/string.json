@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "MT论坛"
+    },
+    {
+      "name": "pasteboard_reason",
+      "value": "用于把你复制的文本粘贴到编辑器，或从剪贴板导入账号配置"
     }
   ]
 }

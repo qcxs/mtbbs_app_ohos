@@ -40,6 +40,13 @@ export class McpStatusNotice {
   /** 冷启动点击暂存 */
   private static pendingTap: boolean = false;
 
+  /**
+   * 最近一次 show 传入的端点；hide 后置 null。
+   *
+   * 前后台切换时用它恢复/撤销通知，避免把「后台已不可达」显示成「服务已开启」。
+   */
+  private static lastEndpoint: string | null = null;
+
   /** 在 configureFlutterEngine 里注册通道（Dart 侧 init 之前完成） */
   static register(engine: FlutterEngine, context: common.UIAbilityContext): void {
     McpStatusNotice.context = context;
@@ -93,6 +100,7 @@ export class McpStatusNotice {
 
   /** 发布/更新常驻通知；通知权限未授予时先申请，被拒则静默跳过 */
   static show(endpoint: string): void {
+    McpStatusNotice.lastEndpoint = endpoint;
     McpStatusNotice.publish(endpoint).catch((e: BusinessError) => {
       Log.w(TAG, '显示 MCP 状态通知失败: ' + JSON.stringify(e));
     });
@@ -100,9 +108,32 @@ export class McpStatusNotice {
 
   /** 取消常驻通知 */
   static hide(): void {
+    McpStatusNotice.lastEndpoint = null;
     notificationManager.cancel(NOTIFICATION_ID).catch((e: BusinessError) => {
       Log.w(TAG, '取消 MCP 状态通知失败: ' + JSON.stringify(e));
     });
+  }
+
+  /**
+   * 切到后台：撤销常驻通知。
+   *
+   * 鸿蒙没有合适的长时任务类型承载「本机 HTTP 服务」：DATA_TRANSFER 要求持续上报
+   * 进度（10 分钟不更新会被系统取消），TASK_KEEPING 仅 2in1 或需受限 ACL。
+   * 进程进入后台后服务实际不可达，通知若继续显示「MCP 服务已开启」就是假状态，
+   * 因此这里先撤销，回前台再恢复（见 docs/17「平台集成」）。
+   */
+  static onBackground(): void {
+    if (McpStatusNotice.lastEndpoint === null) return;
+    notificationManager.cancel(NOTIFICATION_ID).catch((e: BusinessError) => {
+      Log.w(TAG, '后台撤销 MCP 状态通知失败: ' + JSON.stringify(e));
+    });
+  }
+
+  /** 回到前台：MCP 仍开启则恢复通知 */
+  static onForeground(): void {
+    const endpoint = McpStatusNotice.lastEndpoint;
+    if (endpoint === null) return;
+    McpStatusNotice.show(endpoint);
   }
 
   private static async publish(endpoint: string): Promise<void> {
