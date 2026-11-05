@@ -71,21 +71,30 @@ export class ContinuationBridge {
   static getState(): Promise<string | null> {
     const channel = ContinuationBridge.channel;
     if (channel === null) {
+      Log.w(TAG, 'onContinue: channel 未注册，返回 null');
       return Promise.resolve(null);
     }
+    Log.i(TAG, 'onContinue: 向 Dart 请求当前路由快照');
     return new Promise<string | null>((resolve) => {
-      const timer = setTimeout(() => resolve(null), STATE_TIMEOUT_MS);
+      const timer = setTimeout(() => {
+        Log.w(TAG, 'onContinue: 等待 Dart 快照超时，返回 null');
+        resolve(null);
+      }, STATE_TIMEOUT_MS);
       const callback: MethodResult = {
         success: (result: Any) => {
           clearTimeout(timer);
-          resolve(typeof result === 'string' ? result as string : null);
+          const value = typeof result === 'string' ? result as string : null;
+          Log.i(TAG, `onContinue: 快照 = ${value === null ? 'null' : value}`);
+          resolve(value);
         },
         error: (_code: string, _msg: string, _details: Any) => {
           clearTimeout(timer);
+          Log.w(TAG, `onContinue: Dart 返回错误 ${_code} ${_msg}`);
           resolve(null);
         },
         notImplemented: () => {
           clearTimeout(timer);
+          Log.w(TAG, 'onContinue: Dart 未实现 getContinuationState');
           resolve(null);
         },
       };
@@ -103,7 +112,9 @@ export class ContinuationBridge {
       return false;
     }
     const data: Object | undefined = want.parameters?.[CONTINUATION_KEY];
-    if (typeof data === 'string' && data.length > 0) {
+    const hasData = typeof data === 'string' && data.length > 0;
+    Log.i(TAG, `收到接续 Want（cold=${notify ? 'false' : 'true'}，hasData=${hasData}）`);
+    if (hasData) {
       ContinuationBridge.setPending(data as string, notify);
     }
     return true;
@@ -126,6 +137,7 @@ export class ContinuationBridge {
     const state = active
       ? AbilityConstant.ContinueState.ACTIVE
       : AbilityConstant.ContinueState.INACTIVE;
+    Log.i(TAG, `可接续态 -> ${active ? 'ACTIVE' : 'INACTIVE'}`);
     context.setMissionContinueState(state).catch((err: BusinessError) => {
       Log.w(TAG, `setMissionContinueState failed: ${err.code} ${err.message}`);
     });

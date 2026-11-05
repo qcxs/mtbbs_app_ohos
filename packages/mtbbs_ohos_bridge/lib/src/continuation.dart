@@ -36,20 +36,37 @@ abstract class Continuation {
   static void start() {
     if (_started) return;
     _started = true;
-    _attach(0);
+    _attach();
   }
 
-  static void _attach(int attempt) {
-    if (_bind() == null) {
-      // 注册可能发生在首帧渲染之前，也可能之后（等 binding 的轮询耗掉了首帧）：
-      // 先直接试一次，失败再挂下一帧回调，并用 ensureVisualUpdate 保证真的有下一帧
-      // （否则 app 空闲时永远等不到帧，可接续态会一直不生效）。
-      if (attempt < 3) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _attach(attempt + 1));
-        WidgetsBinding.instance.ensureVisualUpdate();
-      }
+  /// 等 GoRouter 挂载后再绑定。
+  ///
+  /// **不能只按帧重试 3 次**：上游 `main()` 在 `runApp()` 之前有大量 `await`
+  /// （设置/站点/登录态/网络初始化），此时帧已经被引擎预跑了好几帧，按帧计数会
+  /// 在 `runApp()` 之前就用光重试，导致 [_active] 永远不置 ACTIVE、对端不显示
+  /// 接续入口。改为按时间轮询（250 ms，上限 60 s），`runApp()` 挂载路由后立即绑定。
+  static void _attach() {
+    if (_bind() != null) {
+      _onBound();
       return;
     }
+    var ticks = 0;
+    Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      ticks++;
+      if (_bind() != null) {
+        timer.cancel();
+        _onBound();
+        return;
+      }
+      if (ticks >= 240) {
+        timer.cancel();
+        logBridge('等待 GoRouter 超时（60s），应用接续不可用');
+      }
+    });
+  }
+
+  /// 路由可用后：同步可接续态，并补取冷启动暂存的快照。
+  static void _onBound() {
     _syncActive();
     // 冷启动接续：原生只暂存不推送（此时推送会在首帧前回放而丢失），
     // 由这里在路由就绪后主动补取（见 docs/ohos/05 §4.3）。
@@ -94,7 +111,9 @@ abstract class Continuation {
     if (active == _active) return;
     _active = active;
     ContinuationBridge.setActive(active);
-    logBridge('mission continue state -> ${active ? 'ACTIVE' : 'INACTIVE'} ($location)');
+    logBridge(
+      'mission continue state -> ${active ? 'ACTIVE' : 'INACTIVE'} ($location)',
+    );
   }
 
   /// 源端快照（由原生 onContinue 拉取）。不在可接续页面时返回 null → REJECT。

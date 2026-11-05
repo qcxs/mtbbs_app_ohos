@@ -80,6 +80,9 @@ dependencies:
   # Markdown 解析（编辑器「导入 Markdown」→ BBCode，见 lib/core/parser/md2bbcode.dart）
   markdown: ^7.3.1
 
+  # 数学公式渲染（52pojie Markdown 帖的 LaTeX → Widget，KaTeX 的 Dart 移植）
+  flutter_math_fork: ^0.7.4
+
   # 瀑布流布局
   flutter_staggered_grid_view: ^0.7.0
 
@@ -106,6 +109,9 @@ dependencies:
   # 免去弹 WebView 打断用户（见 lib/core/app/js_challenge_solver.dart）。
   # 全平台同一 QuickJS（无 Apple JSC 分叉），须显式调小栈上限，并给不可信脚本设超时/内存上限。
   flutter_qjs_next: ^1.5.2
+
+  # 哈希（编解码工具页的 MD5/SHA-1/SHA-256，见 lib/core/utils/codec_utils.dart）
+  crypto: ^3.0.7
 
   # HTML 渲染（BBCode → HTML → Widget）
   # 代码语法高亮
@@ -152,6 +158,9 @@ dev_dependencies:
 #   flutter_inappwebview  6.1.5 -> 6.1.5（无变化）
 #   file_picker           8.3.7 -> 8.0.7（降 3 个小版本，OH 侧无 8.3.7 分支）
 #
+# 上游的 `flutter_inappwebview_windows` path 覆盖（third_party/…）不适用于本仓库：
+#   本仓库没有 Windows 平台工程，也不镜像 third_party/。
+#
 # 维护：上游升级上述插件后，先确认 OH fork 是否有对应分支，再更新这里的 ref。
 # ---------------------------------------------------------------------------
 dependency_overrides:
@@ -188,6 +197,14 @@ dependency_overrides:
   #   根治办法：给 fork 提 PR 把 web 约束改为 ^1.1.0。
   web: ^1.1.0
 
+  # 数学公式渲染（52pojie Markdown 帖 LaTeX）。上游 0.7.4 的 selectable/
+  # line_editable 对 TargetPlatform 做了穷举 switch，OH SDK 多出 ohos 枚举后
+  # 直接编译失败；改用 CPF-Flutter 的 OH 适配分支（版本同为 0.7.4）。
+  flutter_math_fork:
+    git:
+      url: https://gitcode.com/CPF-Flutter/flutter_math_fork.git
+      ref: br_v0.7.4_flutter3.35.7_ohos
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -206,6 +223,7 @@ flutter:
     - assets/config/shortcuts.json
     - assets/config/cache.json
     - assets/config/quick_replies.json
+    - assets/config/site_defaults.json
     - assets/config/thanks.json
     # 关于页展示的应用图标，由 mipmap-xxxhdpi/ic_launcher.png 复制而来
     - assets/icon/app_icon.png
