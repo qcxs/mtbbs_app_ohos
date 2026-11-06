@@ -1,0 +1,21 @@
+name: file_picker_ohos_bridge
+description: 把 OH 社区 file_picker 10.x fork 适配为 file_picker 13.x 的 FilePickerPlatform。
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  file_picker_ohos:
+    path: ../file_picker_ohos
+  file_picker_platform_interface: ^4.2.0
+  cross_file: ^0.3.5
+
+flutter:
+  plugin:
+    platforms:
+      ohos:
+        dartPluginClass: FilePickerOhosBridge

@@ -37,20 +37,20 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^2.0.0
 
   # 网络
-  dio: ^5.4.0
-  dio_cookie_manager: ^3.1.0
+  dio: ^5.11.1
+  dio_cookie_manager: ^3.5.0
   cookie_jar: ^4.0.0
   path_provider: ^2.1.0
 
   # 存储
-  sembast: ^3.8.9
+  sembast: ^3.10.0
   path: ^1.9.0
 
   # 路由
-  go_router: ^14.0.0
+  go_router: ^18.1.3
 
   # 鸿蒙应用接续（应用流转）的 Dart 插件：声明 dartPluginClass 后由 flutter_tools
   # 自动写进 dart_plugin_registrant，引擎在 isolate 启动时注册 —— 构建/运行不再
@@ -58,6 +58,12 @@ dependencies:
   # 包内自包含（不反向依赖 app），避免 pub 循环依赖。
   mtbbs_ohos_bridge:
     path: packages/mtbbs_ohos_bridge
+
+  # file_picker 13.x 没有 ohos 平台实现；OH 社区 fork 最新分支只到 10.x
+  # （且已改名为 file_picker_ohos，API 仍是旧版）。这里用一个 Dart 插件把
+  # 新 API 的 FilePickerPlatform 适配到旧 fork（见 packages/file_picker_ohos_bridge）。
+  file_picker_ohos_bridge:
+    path: packages/file_picker_ohos_bridge
 
   # 状态管理
   provider: ^6.1.0
@@ -69,13 +75,13 @@ dependencies:
   flex_seed_scheme: ^4.0.1
 
   # 图片缓存
-  cached_network_image: ^3.3.0
-  flutter_cache_manager: ^3.3.0
+  cached_network_image: ^4.0.3
+  flutter_cache_manager: ^3.5.0
   http: ^1.2.0
 
   # HTML 解析
-  html: ^0.15.4
-  xml: ^6.5.0
+  html: ^0.15.7
+  xml: ^7.0.1
 
   # Markdown 解析（编辑器「导入 Markdown」→ BBCode，见 lib/core/parser/md2bbcode.dart）
   markdown: ^7.3.1
@@ -88,8 +94,8 @@ dependencies:
 
   # WebView（跨平台：Android/iOS/macOS/Windows/Linux/Web）
   flutter_inappwebview: ^6.1.5
-  file_picker: ^8.0.0
-  url_launcher: ^6.3.2
+  file_picker: ^13.3.2
+  url_launcher: ^6.3.3
   photo_view: ^0.15.0
 
   # 保存「生成图片」分享卡到相册（Android/iOS 相册，Windows 图片库）。
@@ -103,7 +109,7 @@ dependencies:
 
   # 分享图右下角二维码：用 qr 编码 + 自绘模块。
   # 不用 pretty_qr_code —— 它断言「单模块 ≥ 2px」，64px 的二维码会直接崩（见 docs/07 #91）。
-  qr: ^3.0.2
+  qr: ^4.0.0
 
   # 内嵌 JS 引擎（QuickJS）：在本地执行站点的人机验证挑战脚本，
   # 免去弹 WebView 打断用户（见 lib/core/app/js_challenge_solver.dart）。
@@ -111,7 +117,7 @@ dependencies:
   flutter_qjs_next: ^1.5.2
 
   # 哈希（编解码工具页的 MD5/SHA-1/SHA-256，见 lib/core/utils/codec_utils.dart）
-  crypto: ^3.0.7
+  crypto: ^3.0.8
 
   # HTML 渲染（BBCode → HTML → Widget）
   # 代码语法高亮
@@ -122,7 +128,8 @@ dependencies:
   flutter_widget_from_html_core: ^0.17.4
 
   # MCP 服务端（只读，本机 Streamable HTTP，双 era 兼容 2026-07-28 / 2025-11-25）
-  # 锁到具体版本：协议与安全默认值随版本变化，升级前先读 docs/09
+  # 锁到具体版本：协议与安全默认值随版本变化，升级前先读 docs/09。
+  # 2.4.3 仅文档/示例修正，但国内镜像尚未同步归档（404），暂留 2.4.2。
   mcp_dart: 2.4.2
 
 dev_dependencies:
@@ -154,9 +161,10 @@ dev_dependencies:
 #
 # 版本差异（上游版本 -> OH fork 版本）：
 #   path_provider         2.1.6 -> 2.1.5（降 1 个小版本）
-#   url_launcher          6.3.2 -> 6.3.2（无变化）
+#   url_launcher          6.3.3 -> 6.3.2（降 1 个小版本，OH 侧无 6.3.3 分支）
 #   flutter_inappwebview  6.1.5 -> 6.1.5（无变化）
-#   file_picker           8.3.7 -> 8.0.7（降 3 个小版本，OH 侧无 8.3.7 分支）
+#   file_picker           13.3.2 无 OH 分支，改由 packages/file_picker_ohos_bridge
+#                         适配 10.3.8（见 dependencies 里的 bridge 说明）
 #
 # 上游的 `flutter_inappwebview_windows` path 覆盖（third_party/…）不适用于本仓库：
 #   本仓库没有 Windows 平台工程，也不镜像 third_party/。
@@ -184,19 +192,6 @@ dependency_overrides:
       path: flutter_inappwebview
       ref: br_v6.1.5_ohos
 
-  # 编辑器选图 / 附件 / 图床上传；包位于仓库根目录，故不写 path
-  file_picker:
-    git:
-      url: https://gitcode.com/openharmony-sig/fluttertpc_file_picker.git
-      ref: br_v8.0.7_ohos
-
-  # 解决 file_picker 8.0.7 与 flutter_inappwebview_web 的版本冲突：
-  #   file_picker 8.0.7 要求 web ^0.5.1，而上游 8.3.7 与 inappwebview_web 都要求 web ^1.x。
-  #   这里对齐项目原本就已锁定的 web 1.1.x —— web 包只服务 Web 平台，
-  #   不影响鸿蒙构建；file_picker 的 web 实现也不会被编译。
-  #   根治办法：给 fork 提 PR 把 web 约束改为 ^1.1.0。
-  web: ^1.1.0
-
   # 数学公式渲染（52pojie Markdown 帖 LaTeX）。上游 0.7.4 的 selectable/
   # line_editable 对 TargetPlatform 做了穷举 switch，OH SDK 多出 ohos 枚举后
   # 直接编译失败；改用 CPF-Flutter 的 OH 适配分支（版本同为 0.7.4）。
@@ -204,6 +199,15 @@ dependency_overrides:
     git:
       url: https://gitcode.com/CPF-Flutter/flutter_math_fork.git
       ref: br_v0.7.4_flutter3.35.7_ohos
+
+  # Flutter 3.44 起 Material/Cupertino 被拆成独立的 material_ui / cupertino_ui 包，
+  # go_router 18 与 cached_network_image 4 都依赖它们。这两个库内部对 TargetPlatform
+  # 做穷举 switch，OH SDK 多出的 ohos 枚举会让 kernel 编译直接失败：
+  #   The type 'TargetPlatform' is not exhaustively matched ... doesn't match 'TargetPlatform.ohos'
+  # 上游暂未升级到可兼容的版本，OH 仓库回退到升级前已验证可编译的版本（上游仍用新版）。
+  # 回退条件：material_ui/cupertino_ui 支持 ohos 枚举，或 OH SDK 改为非穷举实现。
+  go_router: 14.8.1
+  cached_network_image: 3.4.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
