@@ -34,18 +34,21 @@
       },
       {
         // 正式版：com.github.qcxs.mtbbs.ohos（`--flavor release`）
+        // 本机签名配置只服务于调试包（DevEco 自动签名按 app.json5 的
+        // …ohos.debug 生成）。release/beta 出**无签名侧载包**，由侧载工具签名，
+        // 因此这里**不绑定** `signingConfig`；否则 hvigor 的 SignHap 会报
+        // 「bundleName 与 SigningConfigs 不一致」，`--no-codesign` 也无法跳过。
         "name": "release",
         "bundleName": "com.github.qcxs.mtbbs.ohos",
-        "signingConfig": "default",
         "compatibleSdkVersion": "5.0.5(17)",
         "targetSdkVersion": "26.0.0",
         "runtimeOS": "HarmonyOS",
       },
       {
         // 预发布测试包：com.github.qcxs.mtbbs.ohos.beta（与正式版独立安装）
+        // 同上：不绑定调试签名，出无签名侧载包，否则 beta 打包会在 SignHap 阶段失败。
         "name": "beta",
         "bundleName": "com.github.qcxs.mtbbs.ohos.beta",
-        "signingConfig": "default",
         "compatibleSdkVersion": "5.0.5(17)",
         "targetSdkVersion": "26.0.0",
         "runtimeOS": "HarmonyOS",

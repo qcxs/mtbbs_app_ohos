@@ -28,3 +28,9 @@ migrate_working_dir/
 .dart_tool/
 .packages
 build/
+
+# OHOS 构建生成物（与仓库根 ohos/.gitignore 保持一致）：
+# 每次构建都会按 debug/release 重写，不应入库。
+/oh_modules
+/BuildProfile.ets
+/oh-package-lock.json5
