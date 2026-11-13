@@ -1,0 +1,92 @@
+// 本文件是 ohos/build-profile.json5 的模板（可入库）。
+//
+// ohos/build-profile.json5 被 .gitignore 忽略：DevEco Studio 会把本机证书的
+// 绝对路径与加密口令写进它的 signingConfigs，那份内容**只属于当前机器**，
+// 不能提交。
+//
+// 首次准备：
+//   Copy-Item ohos\build-profile.example.json5 ohos\build-profile.json5
+//   DevEco Studio 打开 ohos/ → File → Project Structure → Signing Configs →
+//   勾选 *Automatically generate signature*（需要登录华为开发者账号）
+//
+// 已有本机文件时不要覆盖：只在需要同步公共配置（包名 / SDK 版本 / product）时，
+// 把本文件对应字段手工抄进本机的 ohos/build-profile.json5。
+//
+// 为什么整文件忽略而不是只忽略 signingConfigs：
+//   .gitignore 无法只忽略 JSON 的某一段；整文件忽略后 `git add -A` / `git commit -a`
+//   永远不会带上签名，代价是公共配置改动要同步到本模板（见 docs/ohos/01 §1.4）。
+{
+  "app": {
+    // 留空数组：签名由 DevEco Studio 在本机生成，不入库
+    "signingConfigs": [],
+    "products": [
+      {
+        // 默认产品 ≠ 正式版：DevEco Studio 直接 Run，以及不带 --flavor 的
+        // `flutter build hap` / `flutter run` 都用它，所以这里是**调试包**
+        // com.github.qcxs.mtbbs.ohos.debug —— 开发调试不会覆盖、也不会顶掉正式包。
+        // 正式版必须显式 `--flavor release`。
+        "name": "default",
+        "bundleName": "com.github.qcxs.mtbbs.ohos.debug",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "targetSdkVersion": "26.0.0",
+        "runtimeOS": "HarmonyOS",
+      },
+      {
+        // 正式版：com.github.qcxs.mtbbs.ohos（`--flavor release`）
+        "name": "release",
+        "bundleName": "com.github.qcxs.mtbbs.ohos",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "targetSdkVersion": "26.0.0",
+        "runtimeOS": "HarmonyOS",
+      },
+      {
+        // 预发布测试包：com.github.qcxs.mtbbs.ohos.beta（与正式版独立安装）
+        "name": "beta",
+        "bundleName": "com.github.qcxs.mtbbs.ohos.beta",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "targetSdkVersion": "26.0.0",
+        "runtimeOS": "HarmonyOS",
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "profile"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        },
+        {
+          "name": "release",
+          "applyToProducts": [
+            "release"
+          ]
+        },
+        {
+          "name": "beta",
+          "applyToProducts": [
+            "beta"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'bridge.dart';
@@ -14,11 +14,13 @@ import 'log.dart';
 /// 切换系统侧的 `ACTIVE / INACTIVE`；快照也是"用时按当前 location 生成"，天然
 /// 是最新值（见 docs/ohos/05 §4.4）。
 abstract class Continuation {
-  /// P0 可接续路由：帖子详情、版块。
+  /// P0 可接续路由：首页、帖子详情、版块。
   ///
   /// 快照只存路由 location，对端 `router.go(location)` 即可原样落回同一页面，
   /// 新增可接续页面时只需在这里放开判断，无需改数据结构。
   static bool _isContinuable(String location) {
+    // 首页：允许从首页发起流转（对端落回首页）
+    if (location == '/') return true;
     if (location.startsWith('/thread/')) {
       // `/thread/cache` 是本地缓存的只读页，不指向真实帖子，不可接续
       return !location.startsWith('/thread/cache');
@@ -31,6 +33,7 @@ abstract class Continuation {
   static bool _active = false;
   static bool _restoring = false;
   static bool _started = false;
+  static bool _syncScheduled = false;
 
   /// 由 [ContinuationBridge.install] 调用（此时 binding 已就绪）。
   static void start() {
@@ -70,7 +73,7 @@ abstract class Continuation {
     _syncActive();
     // 冷启动接续：原生只暂存不推送（此时推送会在首帧前回放而丢失），
     // 由这里在路由就绪后主动补取（见 docs/ohos/05 §4.3）。
-    unawaited(restorePending());
+    unawaited(restorePending(coldStart: true));
   }
 
   /// 绑定 GoRouter；未就绪返回 null。成功后常驻监听路由变化。
@@ -103,7 +106,20 @@ abstract class Continuation {
   }
 
   /// 路由变化：按当前 location 命中与否切换可接续态（无需用户设置开关）。
+  ///
+  /// `routerDelegate` 的通知可能早于 `currentConfiguration` 更新（此时读到的是
+  /// 旧 location，会被 [_lastLocation] 判成"没变化"而丢掉这次切换），因此统一
+  /// 推迟到帧后再读，保证拿到的是本次导航落地后的 location。
   static void _syncActive() {
+    if (_syncScheduled) return;
+    _syncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncScheduled = false;
+      _applyActive();
+    });
+  }
+
+  static void _applyActive() {
     final location = _currentLocation();
     if (location == null || location == _lastLocation) return;
     _lastLocation = location;
@@ -124,23 +140,80 @@ abstract class Continuation {
   }
 
   /// 对端：路由就绪后取走原生暂存的快照并跳转。
-  static Future<void> restorePending() async {
+  ///
+  /// [coldStart] 为 true（冷启动补取）时先让启动期请求落地再跳转；
+  /// 热启动由原生推送触发，窗口与初始化都已完成，直接跳。
+  static Future<void> restorePending({bool coldStart = false}) async {
     // 取走即清空，路由未就绪时不能消费，否则数据白白丢失
     final router = _bind();
     if (router == null || _restoring) return;
     _restoring = true;
+    String? location;
     try {
       final data = await ContinuationBridge.takePending();
       if (data == null || data.isEmpty) return;
       final decoded = jsonDecode(data);
-      final location = decoded is Map ? decoded['location'] : null;
-      if (location is! String || location.isEmpty) return;
+      location = (decoded is Map ? decoded['location'] : null) as String?;
+      if (location == null || location.isEmpty) {
+        logBridge('continuation decode failed: $data');
+        _showRestoreDialog(router, null);
+        return;
+      }
       logBridge('restore continuation: $location');
+      if (coldStart) await _settleStartup();
       router.go(location);
-    } on FormatException catch (e) {
-      logBridge('continuation decode failed: $e');
+    } catch (e) {
+      // 不再静默失败：弹窗让用户手动前往，避免"点了流转却停在原地"
+      logBridge('continuation restore failed: $e');
+      _showRestoreDialog(router, location);
     } finally {
       _restoring = false;
     }
+  }
+
+  /// 冷启动时让出一点时间：目标页的请求若与启动期（站点/会话/Cookie 罐/
+  /// 导航守卫）的请求同时发出，偶发首屏 "Failed to load cookies" 类失败。
+  /// 等首帧 + 300 ms 后再跳，正常用户感知不到，但能显著降低抢跑概率。
+  static Future<void> _settleStartup() async {
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+    } catch (_) {
+      // 没有可等待的帧（例如后台挂起），直接进入延时
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+  }
+
+  /// 恢复失败的可见反馈：弹窗提示可手动前往，而不是只在日志里静默失败。
+  static void _showRestoreDialog(GoRouter router, String? location) {
+    final context = router.routerDelegate.navigatorKey.currentContext;
+    if (context == null) {
+      logBridge('无法弹窗（Navigator 未就绪），接续目标：$location');
+      return;
+    }
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('应用接续'),
+        content: Text(
+          location == null
+              ? '收到了另一台设备的接续内容，但无法解析。'
+              : '收到了另一台设备的接续内容，但自动跳转失败：\n$location',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('关闭'),
+          ),
+          if (location != null)
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                router.go(location);
+              },
+              child: const Text('前往'),
+            ),
+        ],
+      ),
+    );
   }
 }

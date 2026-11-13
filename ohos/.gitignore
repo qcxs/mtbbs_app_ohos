@@ -1,6 +1,9 @@
 /node_modules
 /oh_modules
 /local.properties
+# 本机签名配置（DevEco 会写入证书绝对路径与加密口令），**绝不入库**。
+# 模板：build-profile.example.json5；首次用 Copy-Item 生成，见 docs/ohos/01 §1.4
+/build-profile.json5
 /.idea
 **/build
 /.hvigor

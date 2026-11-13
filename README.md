@@ -65,9 +65,10 @@ flutter test tool/api_probe_test.dart --dart-define=cmd=help
 
 # 出包：模拟器用 x64，真机用 arm64；侧载分发加 --no-codesign
 # 接续（应用流转）由 Dart 插件 packages/mtbbs_ohos_bridge 自动注册，不需要 --target
-# 包名变体：正式 …mtbbs.ohos / beta …mtbbs.ohos.beta（--flavor beta）/ debug …mtbbs.ohos.debug（--flavor debug）
-& $flutter build hap --debug   --target-platform ohos-x64 --no-codesign --flavor debug
-& $flutter build hap --release --target-platform ohos-arm64 --no-codesign
+# 包名变体：debug …mtbbs.ohos.debug（默认 product，DevEco 直接 Run 也是它）
+#           正式 …mtbbs.ohos（--flavor release）/ beta …mtbbs.ohos.beta（--flavor beta）
+& $flutter build hap --debug   --target-platform ohos-x64 --no-codesign
+& $flutter build hap --release --target-platform ohos-arm64 --no-codesign --flavor release
 
 # 调试运行（可选）
 & $flutter devices

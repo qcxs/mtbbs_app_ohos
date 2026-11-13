@@ -1,9 +1,11 @@
 {
   "app": {
     // 包名带 .ohos 后缀：鸿蒙设备上可能通过「卓易通」安装上游 Android APK，
-    // 两者包名必须不同，否则只能二选一。beta / debug 变体分别再加 .beta / .debug
-    // 后缀（见 build-profile.json5 的 products）。
-    "bundleName": "com.github.qcxs.mtbbs.ohos",
+    // 两者包名必须不同，否则只能二选一。
+    // 这里的基名 = **调试包**（未指定 product 时的身份，DevEco 直接 Run 也取它），
+    // 正式版由 build-profile.json5 的 product `release` 覆盖为
+    // com.github.qcxs.mtbbs.ohos，beta 覆盖为 …ohos.beta。
+    "bundleName": "com.github.qcxs.mtbbs.ohos.debug",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

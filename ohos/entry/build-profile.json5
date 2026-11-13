@@ -9,14 +9,16 @@
       "runtimeOS": "HarmonyOS"
     },
     {
-      // 预发布 / 调试变体：与 product 一一对应，hvigor 的输出目录按 target 名生成
+      // 正式 / beta 变体：与 product 一一对应，hvigor 的输出目录按 target 名生成
       // （entry/build/<buildMode>/outputs/<target>/entry-<target>-*.hap），
-      // flutter build hap --flavor <product> 依赖这个对应关系
-      "name": "beta",
+      // flutter build hap --flavor <product> 依赖这个对应关系。
+      // 注意：`default` 对应调试包（DevEco 直接 Run 的默认 product），
+      // 正式版走 `--flavor release`。
+      "name": "release",
       "runtimeOS": "HarmonyOS"
     },
     {
-      "name": "debug",
+      "name": "beta",
       "runtimeOS": "HarmonyOS"
     },
     {
